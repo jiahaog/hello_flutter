@@ -1,16 +1,44 @@
-# hello_flutter
+# Example App for Shader Compilation Jank
 
-A new Flutter project.
+`main.dart` is a minimal repro of shader compilation jank, taken from https://github.com/flutter/flutter/issues/76180.
 
-## Getting Started
+## With manual interaction
 
-This project is a starting point for a Flutter application.
+The regular way of collecting SkSL is:
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter run --profile --cache-sksl --purge-persistent-cache
+```
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+Then tap the floating action button, followed by the CLOSE text.
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Press `M` to write the SkSL to the host.
+
+
+## To verify that it works
+
+```sh
+flutter run --profile --bundle-sksl-path=flutter_01.sksl.json
+```
+
+(Use the correct path to the cached shaders)
+
+There will be a message like:
+
+```
+The Flutter DevTools debugger and profiler on phone is available at: http://127.0.0.1:61994?uri=http://127.0.0.1:61989/6efuMbZMneE=/
+```
+
+Open the link, then do the interaction again. The frames shown in the timeline should not indicate any shader compilation jank.
+
+## With `package:integration_test`
+
+With https://github.com/flutter/flutter/pull/85118, we can use `package:integration_test` to do so:
+
+```sh
+flutter test --write-sksl-on-exit=integration-test-sksl.json integration_test
+
+flutter run --profile --bundle-sksl-path=integration-test-sksl.json
+```
+
+Do the same as above to open DevTools and check for shader compilation jank.
