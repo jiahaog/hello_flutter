@@ -2,14 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  LiveTestWidgetsFlutterBinding();
+  final binding = LiveTestWidgetsFlutterBinding();
+
+  // Empirically, I noticed that without the `LiveTestWidgetsFlutterBinding`,
+  // calling `adb exec-out uiautomator dump /dev/tty` schedules a frame where
+  // the persistent frame callbacks eventually send the semantic nodes into the
+  // platform dispatcher [1].
+  //
+  // However, the default [LiveTestWidgetsFlutterBindingFramePolicy] requires
+  // all frames to be pumped explicitly. This means that the subsequently
+  // scheduled frame resulting from `adb exec-out uiautomator dump /dev/tty`
+  // will never get scheduled. Changing this to `benchmarkLive` skips the pump
+  // requirement as a workaroud, but perhaps a proper fix for this bug shouldn't
+  // constrain us to only this frame policy.
+  //
+  // [1]: https://github.com/flutter/flutter/blob/d4929bc828ff32e23fa7230a91117acbe8fd2801/packages/flutter/lib/src/semantics/semantics.dart#L3099
+  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.benchmarkLive;
 
   testWidgets('foo', (tester) async {
     await tester.pumpWidget(MyApp());
 
     // Keep the widget on screen so we can take the UI Automator dump.
     await Future.delayed(Duration(hours: 10));
-  });
+
+    // "Disable" semantics otherwise the `_outstandingSemanticsHandles` count
+    // here [1] will be 2 and `onSemanticsOwnerCreated` will not be called.
+    //
+    // [1]: https://github.com/flutter/flutter/blob/d4929bc828ff32e23fa7230a91117acbe8fd2801/packages/flutter/lib/src/rendering/object.dart#L1171
+  }, semanticsEnabled: false);
 }
 
 class MyApp extends StatelessWidget {
