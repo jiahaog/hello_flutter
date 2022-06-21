@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  runApp(MyApp());
+  LiveTestWidgetsFlutterBinding();
+
+  testWidgets('foo', (tester) async {
+    await tester.pumpWidget(MyApp());
+
+    // Keep the widget on screen so we can take the UI Automator dump.
+    await Future.delayed(Duration(hours: 10));
+  });
 }
 
 class MyApp extends StatelessWidget {
