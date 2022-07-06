@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final sw = Stopwatch()..start();
+
+  await MethodChannel('foo').invokeMethod<String>('hello');
+
+  sw.stop();
+  // This is delayed by the same delay to activityResume added in MainApplication.kt.
+  print('method channel took ${sw.elapsed}');
+
   runApp(MyApp());
 }
 
